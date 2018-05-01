@@ -16,12 +16,8 @@ def avg_by_url_without_outliers(key, outlier_threshold=6500):
     return list(map(mean, [[val for val in url[key] if val < outlier_threshold] for url in data['urls']]))
 
 
-def generate_chart(outfile, bin_size, renders, fps, fcps):
-    fig = ff.create_distplot(
-        [renders, fps, fcps],
-        ['Start Render', 'First Paint', 'First Contentful Paint'],
-        bin_size=bin_size
-    )
+def generate_chart(outfile, bin_size, data, labels):
+    fig = ff.create_distplot(data, labels, bin_size=bin_size, show_rug=False)
     py.plot(fig, filename=outfile, auto_open=False)
 
 
@@ -31,14 +27,21 @@ fps = values_without_outliers('fp')
 fcps = values_without_outliers('fcp')
 fmps = values_without_outliers('fmp')
 
-generate_chart('metric-distribution.html', 100, renders, fps, fcps)
+generate_chart('metric-distribution.html', 100, [renders, fps, fcps], [
+               'Start Render', 'First Paint', 'First Contentful Paint'])
 
 render_avgs = avg_by_url_without_outliers('render')
 fp_avgs = avg_by_url_without_outliers('fp')
 fcp_avgs = avg_by_url_without_outliers('fcp')
 
 generate_chart('metric-distribution-by-url.html', 50,
-               render_avgs, fp_avgs, fcp_avgs)
+               [render_avgs, fp_avgs, fcp_avgs], ['Start Render', 'First Paint', 'First Contentful Paint'])
+
+fp_deltas = [fp - render for fp, render in zip(fps, renders)]
+fcp_deltas = [fcp - render for fcp, render in zip(fcps, renders)]
+
+generate_chart('metric-deltas.html', 50, [fp_deltas, fcp_deltas], [
+               'First Paint Delta', 'First Contentful Paint Delta'])
 print('Done.')
 
 mean_render = mean(renders)
