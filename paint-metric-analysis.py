@@ -1,19 +1,31 @@
 import json
 import plotly.offline as py
 import plotly.graph_objs as go
+import sys
+from math import floor
 from statistics import mean, harmonic_mean
 
-f = open('paint-metrics.json', 'r')
+if len(sys.argv) < 2:
+    print('Usage: paint-metric-analysis.py <filename>')
+    exit()
+
+filename = sys.argv[1]
+
+f = open(filename, 'r')
 data = json.load(f)
 f.close()
 
 
-def values_without_outliers(key, outlier_threshold=6500):
-    return [item for url in data['urls'] for item in url[key] if item < outlier_threshold]
+def percentile(xs, n):
+    return xs[int(floor(len(xs) * n))]
+
+# Metric values across all URLs, excluding values over a given percentile
 
 
-def avg_by_url_without_outliers(key, outlier_threshold=6500):
-    return list(map(mean, [[val for val in url[key] if val < outlier_threshold] for url in data['urls']]))
+def values_without_outliers(metric, outlier_percentile=0.95):
+    all_values = [item for url in data['urls'] for item in url[metric]]
+    outlier_threshold = percentile(all_values, outlier_percentile)
+    return [value for value in all_values if value < outlier_threshold]
 
 
 def histogram_trace(data, label, bin_size):
@@ -26,30 +38,23 @@ def generate_histogram(outfile, bin_size, data, labels):
     layout = go.Layout(barmode='overlay')
     fig = go.Figure(data=data, layout=layout)
     py.plot(fig, filename=outfile, auto_open=False)
+    print('Generated %s' % outfile)
 
 
-print('Generating HTML charts... ', end='', flush=True)
 renders = values_without_outliers('render')
 fps = values_without_outliers('fp')
 fcps = values_without_outliers('fcp')
 fmps = values_without_outliers('fmp')
 
-generate_histogram('metric-distribution.html', 100, [renders, fps, fcps], [
+generate_histogram(filename.replace('.json', '-distribution.html'), 50, [renders, fps, fcps], [
     'Start Render', 'First Paint', 'First Contentful Paint'])
-
-render_avgs = avg_by_url_without_outliers('render')
-fp_avgs = avg_by_url_without_outliers('fp')
-fcp_avgs = avg_by_url_without_outliers('fcp')
-
-generate_histogram('metric-distribution-by-url.html', 50,
-                   [render_avgs, fp_avgs, fcp_avgs], ['Start Render', 'First Paint', 'First Contentful Paint'])
 
 fp_deltas = [fp - render for fp, render in zip(fps, renders)]
 fcp_deltas = [fcp - render for fcp, render in zip(fcps, renders)]
+fmp_deltas = [fmp - render for fmp, render in zip(fmps, renders)]
 
-generate_histogram('metric-deltas.html', 50, [fp_deltas, fcp_deltas], [
+generate_histogram(filename.replace('.json', '-deltas.html'), 20, [fp_deltas, fcp_deltas], [
     'First Paint Delta', 'First Contentful Paint Delta'])
-print('Done.')
 
 mean_render = mean(renders)
 mean_fp = mean(fps)
@@ -61,7 +66,7 @@ hmean_fp = harmonic_mean(fps)
 hmean_fcp = harmonic_mean(fcps)
 hmean_fmp = harmonic_mean(fmps)
 
-print('Generating aggregate stats...\n')
+print('\nAggregate stats:\n')
 
 print('|                                 Mean                                         |')
 print('| Start Render | First Paint | First Contentful Paint | First Meaningful Paint |')
@@ -88,4 +93,43 @@ print('|         %d | %d (%d) |            %d (%d) |              %d (%d) |' % (
     hmean_fcp - hmean_render,
     hmean_fmp,
     hmean_fmp - hmean_render,
+))
+
+fp_deltas_abs = sorted(list(map(abs, fp_deltas)))
+fcp_deltas_abs = sorted(list(map(abs, fcp_deltas)))
+fmp_deltas_abs = sorted(list(map(abs, fmp_deltas)))
+
+print('')
+print('|                                 Deltas                                    |')
+print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
+print('|-----------|-------------|------------------------|------------------------|')
+print('| avg       |        %s |                   %s |                   %s |' % (
+    str(round(mean(fp_deltas_abs))).rjust(4, ' '),
+    str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
+    str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
+))
+print('| med (50)  |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.5))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.5))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.5))).rjust(4, ' '),
+))
+print('| 70        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.70))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.70))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.70))).rjust(4, ' '),
+))
+print('| 80        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.80))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.80))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.80))).rjust(4, ' '),
+))
+print('| 90        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.9))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.9))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.9))).rjust(4, ' '),
+))
+print('| 95        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.95))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.95))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.95))).rjust(4, ' '),
 ))
