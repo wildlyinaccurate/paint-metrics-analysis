@@ -27,4 +27,4 @@ python paint-metric-analysis.py paint-metrics.json
 python3 paint-metric-analysis.py paint-metrics.json
 ```
 
-This will output some aggregate stats, and also generate two HTML files containing frequency distributions of the metric values themselves as well as the deltas between start render and FP/FCP.
+This will output some aggregate stats, and also generate three HTML files containing frequency distributions of the metric values themselves as well as the deltas between start render and FP/FCP.
