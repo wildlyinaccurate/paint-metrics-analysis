@@ -119,7 +119,7 @@ print('| avg       |        %s |                   %s |                   %s |' 
     str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
     str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
 ))
-for pct in [10, 25, 50, 70, 80, 90]:
+for pct in [10, 25, 50, 70, 80, 90, 95]:
     print('| %s        |        %s |                   %s |                   %s |' % (
         str(pct),
         pad(percentile(fp_deltas_abs, pct / 100)),
@@ -140,7 +140,7 @@ print('| avg       |       %s%% |                  %s%% |                  %s%% 
     pad(mean(fcp_deltas_rel_abs) * 100),
     pad(mean(fmp_deltas_rel_abs) * 100),
 ))
-for pct in [10, 25, 50, 70, 80, 90]:
+for pct in [10, 25, 50, 70, 80, 90, 95]:
     print('| %s        |       %s%% |                  %s%% |                  %s%% |' % (
         str(pct),
         pad(percentile(fp_deltas_rel_abs, pct / 100) * 100),
