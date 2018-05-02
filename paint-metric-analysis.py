@@ -19,10 +19,10 @@ f.close()
 def percentile(xs, n):
     return xs[int(floor(len(xs) * n))]
 
-# Metric values across all URLs, excluding values over a given percentile
-
 
 def values_without_outliers(metric, outlier_percentile=0.95):
+    """ Metric values across all URLs, excluding values over a given percentile
+    """
     all_values = [item for url in data['urls'] for item in url[metric]]
     outlier_threshold = percentile(all_values, outlier_percentile)
     return [value for value in all_values if value < outlier_threshold]
@@ -35,12 +35,15 @@ def histogram_trace(data, label, bin_size):
 def generate_histogram(outfile, bin_size, data, labels):
     data = [histogram_trace(series, label, bin_size)
             for series, label in zip(data, labels)]
-    layout = go.Layout(barmode='overlay')
+    layout = go.Layout(barmode='overlay', font=dict(
+        size=28), legend=dict(x=0.77))
     fig = go.Figure(data=data, layout=layout)
     py.plot(fig, filename=outfile, auto_open=False)
     print('Generated %s' % outfile)
 
 
+# We exclude extreme outliers (>95th percentile) from the metric values, in an attempt
+# to filter out potentially-bogus test results.
 renders = values_without_outliers('render')
 fps = values_without_outliers('fp')
 fcps = values_without_outliers('fcp')
@@ -56,17 +59,23 @@ fmp_deltas = [fmp - render for fmp, render in zip(fmps, renders)]
 generate_histogram(filename.replace('.json', '-deltas.html'), 20, [fp_deltas, fcp_deltas], [
     'First Paint Delta', 'First Contentful Paint Delta'])
 
+# It can be useful to see an average value across all of the metrics
 mean_render = mean(renders)
 mean_fp = mean(fps)
 mean_fcp = mean(fcps)
 mean_fmp = mean(fmps)
 
+# Taking the harmonic mean can help to sanity-check the outlier filtering
 hmean_render = harmonic_mean(renders)
 hmean_fp = harmonic_mean(fps)
 hmean_fcp = harmonic_mean(fcps)
 hmean_fmp = harmonic_mean(fmps)
 
-print('\nAggregate stats:\n')
+# Taking the deltas as absolute values allows us to make some assertions about
+# how frequently the paint metrics are within X milliseconds of start render.
+fp_deltas_abs = sorted(list(map(abs, fp_deltas)))
+fcp_deltas_abs = sorted(list(map(abs, fcp_deltas)))
+fmp_deltas_abs = sorted(list(map(abs, fmp_deltas)))
 
 print('|                                 Mean                                         |')
 print('| Start Render | First Paint | First Contentful Paint | First Meaningful Paint |')
@@ -94,10 +103,6 @@ print('|         %d | %d (%d) |            %d (%d) |              %d (%d) |' % (
     hmean_fmp,
     hmean_fmp - hmean_render,
 ))
-
-fp_deltas_abs = sorted(list(map(abs, fp_deltas)))
-fcp_deltas_abs = sorted(list(map(abs, fcp_deltas)))
-fmp_deltas_abs = sorted(list(map(abs, fmp_deltas)))
 
 print('')
 print('|                                 Deltas                                    |')
