@@ -105,6 +105,50 @@ fp_deltas_abs = sorted(list(map(abs, fp_deltas)))
 fcp_deltas_abs = sorted(list(map(abs, fcp_deltas)))
 fmp_deltas_abs = sorted(list(map(abs, fmp_deltas)))
 
+
+def pad(i, width=4):
+    return str(round(i)).rjust(width, ' ')
+
+
+print('')
+print('|                                 Deltas                                    |')
+print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
+print('|-----------|-------------|------------------------|------------------------|')
+print('| avg       |        %s |                   %s |                   %s |' % (
+    str(round(mean(fp_deltas_abs))).rjust(4, ' '),
+    str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
+    str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
+))
+for pct in [10, 25, 50, 70, 80, 90]:
+    print('| %s        |        %s |                   %s |                   %s |' % (
+        str(pct),
+        pad(percentile(fp_deltas_abs, pct / 100)),
+        pad(percentile(fcp_deltas_abs, pct / 100)),
+        pad(percentile(fmp_deltas_abs, pct / 100)),
+    ))
+
+fp_deltas_rel_abs = sorted(list(map(abs, fp_deltas_rel)))
+fcp_deltas_rel_abs = sorted(list(map(abs, fcp_deltas_rel)))
+fmp_deltas_rel_abs = sorted(list(map(abs, fmp_deltas_rel)))
+
+print('')
+print('|                            Deltas (Relative)                              |')
+print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
+print('|-----------|-------------|------------------------|------------------------|')
+print('| avg       |       %s%% |                  %s%% |                  %s%% |' % (
+    pad(mean(fp_deltas_rel_abs) * 100),
+    pad(mean(fcp_deltas_rel_abs) * 100),
+    pad(mean(fmp_deltas_rel_abs) * 100),
+))
+for pct in [10, 25, 50, 70, 80, 90]:
+    print('| %s        |       %s%% |                  %s%% |                  %s%% |' % (
+        str(pct),
+        pad(percentile(fp_deltas_rel_abs, pct / 100) * 100),
+        pad(percentile(fcp_deltas_rel_abs, pct / 100) * 100),
+        pad(percentile(fmp_deltas_rel_abs, pct / 100) * 100),
+    ))
+
+print('')
 print('|                                 Mean                                         |')
 print('| Start Render | First Paint | First Contentful Paint | First Meaningful Paint |')
 print('|--------------|-------------|------------------------|------------------------|')
@@ -131,48 +175,4 @@ print('|         %d | %d (%d) |            %d (%d) |              %d (%d) |' % (
     hmean_fmp,
     hmean_fmp - hmean_render,
 ))
-
 print('')
-print('|                                 Deltas                                    |')
-print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
-print('|-----------|-------------|------------------------|------------------------|')
-print('| avg       |        %s |                   %s |                   %s |' % (
-    str(round(mean(fp_deltas_abs))).rjust(4, ' '),
-    str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
-    str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
-))
-print('| 10        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.1))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.1))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.1))).rjust(4, ' '),
-))
-print('| 25        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.25))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.25))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.25))).rjust(4, ' '),
-))
-print('| 50        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.5))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.5))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.5))).rjust(4, ' '),
-))
-print('| 70        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.70))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.70))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.70))).rjust(4, ' '),
-))
-print('| 80        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.80))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.80))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.80))).rjust(4, ' '),
-))
-print('| 90        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.9))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.9))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.9))).rjust(4, ' '),
-))
-print('| 95        |        %s |                   %s |                   %s |' % (
-    str(round(percentile(fp_deltas_abs, 0.95))).rjust(4, ' '),
-    str(round(percentile(fcp_deltas_abs, 0.95))).rjust(4, ' '),
-    str(round(percentile(fmp_deltas_abs, 0.95))).rjust(4, ' '),
-))
