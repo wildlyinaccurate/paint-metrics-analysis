@@ -113,7 +113,17 @@ print('| avg       |        %s |                   %s |                   %s |' 
     str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
     str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
 ))
-print('| med (50)  |        %s |                   %s |                   %s |' % (
+print('| 10        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.1))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.1))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.1))).rjust(4, ' '),
+))
+print('| 25        |        %s |                   %s |                   %s |' % (
+    str(round(percentile(fp_deltas_abs, 0.25))).rjust(4, ' '),
+    str(round(percentile(fcp_deltas_abs, 0.25))).rjust(4, ' '),
+    str(round(percentile(fmp_deltas_abs, 0.25))).rjust(4, ' '),
+))
+print('| 50        |        %s |                   %s |                   %s |' % (
     str(round(percentile(fp_deltas_abs, 0.5))).rjust(4, ' '),
     str(round(percentile(fcp_deltas_abs, 0.5))).rjust(4, ' '),
     str(round(percentile(fmp_deltas_abs, 0.5))).rjust(4, ' '),
