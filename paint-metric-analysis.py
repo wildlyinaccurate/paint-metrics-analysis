@@ -149,30 +149,38 @@ for pct in [10, 25, 50, 70, 80, 90, 95]:
     ))
 
 print('')
-print('|                                 Mean                                         |')
-print('| Start Render | First Paint | First Contentful Paint | First Meaningful Paint |')
-print('|--------------|-------------|------------------------|------------------------|')
-print('|         %d | %d (%d) |            %d (%d) |             %d (%d) |' % (
+print('|                                       Aggregate Stats                                           |')
+print('| Stat            | Start Render | First Paint  | First Contentful Paint | First Meaningful Paint |')
+print('|-----------------|--------------|--------------|------------------------|------------------------|')
+print('| Mean            |         %d | %s |           %s |           %s |' % (
     mean_render,
-    mean_fp,
-    mean_fp - mean_render,
-    mean_fcp,
-    mean_fcp - mean_render,
-    mean_fmp,
-    mean_fmp - mean_render,
+    ('%d (%d)' % (mean_fp, mean_fp - mean_render)).rjust(12, ' '),
+    ('%d (%d)' % (mean_fcp, mean_fcp - mean_render)).rjust(12, ' '),
+    ('%d (%d)' % (mean_fmp, mean_fmp - mean_render)).rjust(12, ' '),
+))
+print('| Harmonic Mean   |         %d | %s |           %s |           %s |' % (
+    hmean_render,
+    ('%d (%d)' % (hmean_fp, hmean_fp - hmean_render)).rjust(12, ' '),
+    ('%d (%d)' % (hmean_fcp, hmean_fcp - hmean_render)).rjust(12, ' '),
+    ('%d (%d)' % (hmean_fmp, hmean_fmp - hmean_render)).rjust(12, ' '),
 ))
 
-print('')
-print('|                            Harmonic Mean                                     |')
-print('| Start Render | First Paint | First Contentful Paint | First Meaningful Paint |')
-print('|--------------|-------------|------------------------|------------------------|')
-print('|         %d | %d (%d) |            %d (%d) |              %d (%d) |' % (
-    hmean_render,
-    hmean_fp,
-    hmean_fp - hmean_render,
-    hmean_fcp,
-    hmean_fcp - hmean_render,
-    hmean_fmp,
-    hmean_fmp - hmean_render,
-))
+sorted_renders = sorted(renders)
+sorted_fps = sorted(fps)
+sorted_fcps = sorted(fcps)
+sorted_fmps = sorted(fmps)
+
+for pct in [10, 25, 50, 70, 80, 90, 95]:
+    render_pct = percentile(sorted_renders, pct / 100)
+    fp_pct = percentile(sorted_fps, pct / 100)
+    fcp_pct = percentile(sorted_fcps, pct / 100)
+    fmp_pct = percentile(sorted_fmps, pct / 100)
+
+    print('| %sth percentile |         %d | %s |           %s |           %s |' % (
+        str(pct),
+        render_pct,
+        ('%d (%d)' % (fp_pct, fp_pct - render_pct)).rjust(12, ' '),
+        ('%d (%d)' % (fcp_pct, fcp_pct - render_pct)).rjust(12, ' '),
+        ('%d (%d)' % (fmp_pct, fmp_pct - render_pct)).rjust(12, ' '),
+    ))
 print('')
