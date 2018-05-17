@@ -17,15 +17,11 @@ f.close()
 
 
 def percentile(xs, n):
-    return xs[int(floor(len(xs) * n))]
+    return sorted(xs)[int(floor(len(xs) * n))]
 
 
 def metric_values(metric):
     return [item for url in data['urls'] for item in url[metric]]
-
-
-def remove_outliers(values, outlier_threshold):
-    return [value for value in values if value < outlier_threshold]
 
 
 def histogram_trace(data, label, bin_size, xstart=None, xend=None):
@@ -49,21 +45,16 @@ def generate_histogram(outfile, data, labels, bin_size, xstart=None, xend=None, 
 # Distribution plots
 #
 
-renders = sorted(metric_values('render'))
-fps = sorted(metric_values('fp'))
-fcps = sorted(metric_values('fcp'))
-fmps = sorted(metric_values('fmp'))
 
-# There are some large outliers in the data, potentially from bogus test runs.
-renders_filtered = remove_outliers(renders, percentile(renders, 0.95))
-fps_filtered = remove_outliers(fps, percentile(fps, 0.95))
-fcps_filtered = remove_outliers(fcps, percentile(fcps, 0.95))
-fmps_filtered = remove_outliers(fmps, percentile(fmps, 0.95))
+renders = metric_values('render')
+fps = metric_values('fp')
+fcps = metric_values('fcp')
+fmps = metric_values('fmp')
 
 # Seeing a distribution of all of the metric values can show how strongly correlated
 # the metrics are.
-generate_histogram(filename.replace('.json', '-distribution.html'), [renders_filtered, fps_filtered, fcps_filtered], [
-                   'Start Render', 'First Paint', 'First Contentful Paint'], bin_size=50)
+generate_histogram(filename.replace('.json', '-distribution.html'), [renders, fps, fcps], [
+                   'Start Render', 'First Paint', 'First Contentful Paint'], bin_size=50, xend=percentile(fcps, 0.95))
 
 # Calculating the delta between the paint metrics and start render gives us a better
 # insight into how accurate browsers are at determining when pixels are rendered to
@@ -100,8 +91,9 @@ generate_histogram(filename.replace('.json', '-deltas-relative.html'), [fp_delta
 def pad(i, width=4):
     return str(round(i)).rjust(width, ' ')
 
+
 def absolute_values(xs):
-    return sorted(list(map(abs, xs)))
+    return list(map(abs, xs))
 
 
 # Seeing an average value for each of the metrics gives a rough but useful view
