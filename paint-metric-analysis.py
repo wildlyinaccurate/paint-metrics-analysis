@@ -63,6 +63,8 @@ fp_deltas = [fp - render for fp, render in zip(fps, renders)]
 fcp_deltas = [fcp - render for fcp, render in zip(fcps, renders)]
 fmp_deltas = [fmp - render for fmp, render in zip(fmps, renders)]
 
+# Note that the X axis range is -1000 to 1000. This is because roughly 90% of the
+# data is within this range.
 generate_histogram(filename.replace('.json', '-deltas.html'), [fp_deltas, fcp_deltas], [
                    'First Paint Delta', 'First Contentful Paint Delta'], bin_size=20, xstart=-1000, xend=1000)
 
@@ -117,16 +119,16 @@ fmp_deltas_abs = absolute_values(fmp_deltas)
 
 
 print('')
-print('|                                 Deltas                                    |')
-print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
-print('|-----------|-------------|------------------------|------------------------|')
-print('| avg       |        %s |                   %s |                   %s |' % (
+print('|                                    Deltas                                       |')
+print('| Stat            | First Paint | First Contentful Paint | First Meaningful Paint |')
+print('|-----------------|-------------|------------------------|------------------------|')
+print('| Mean            |        %s |                   %s |                   %s |' % (
     str(round(mean(fp_deltas_abs))).rjust(4, ' '),
     str(round(mean(fcp_deltas_abs))).rjust(4, ' '),
     str(round(mean(fmp_deltas_abs))).rjust(4, ' '),
 ))
-for pct in [10, 25, 50, 70, 80, 90, 95]:
-    print('| %s        |        %s |                   %s |                   %s |' % (
+for pct in [20, 50, 70, 80, 85, 90, 95]:
+    print('| %sth percentile |        %s |                   %s |                   %s |' % (
         str(pct),
         pad(percentile(fp_deltas_abs, pct / 100)),
         pad(percentile(fcp_deltas_abs, pct / 100)),
@@ -138,16 +140,16 @@ fcp_deltas_rel_abs = absolute_values(fcp_deltas_rel)
 fmp_deltas_rel_abs = absolute_values(fmp_deltas_rel)
 
 print('')
-print('|                            Deltas (Relative)                              |')
-print('| Stat      | First Paint | First Contentful Paint | First Meaningful Paint |')
-print('|-----------|-------------|------------------------|------------------------|')
-print('| avg       |       %s%% |                  %s%% |                  %s%% |' % (
+print('|                               Deltas (Relative)                                 |')
+print('| Stat            | First Paint | First Contentful Paint | First Meaningful Paint |')
+print('|-----------------|-------------|------------------------|------------------------|')
+print('| Mean            |       %s%% |                  %s%% |                  %s%% |' % (
     pad(mean(fp_deltas_rel_abs) * 100),
     pad(mean(fcp_deltas_rel_abs) * 100),
     pad(mean(fmp_deltas_rel_abs) * 100),
 ))
-for pct in [10, 25, 50, 70, 80, 90, 95]:
-    print('| %s        |       %s%% |                  %s%% |                  %s%% |' % (
+for pct in [20, 50, 70, 80, 85, 90, 95]:
+    print('| %sth percentile |       %s%% |                  %s%% |                  %s%% |' % (
         str(pct),
         pad(percentile(fp_deltas_rel_abs, pct / 100) * 100),
         pad(percentile(fcp_deltas_rel_abs, pct / 100) * 100),
@@ -171,7 +173,7 @@ print('| Harmonic Mean   |         %d | %s |           %s |           %s |' % (
     ('%d (%d)' % (hmean_fmp, hmean_fmp - hmean_render)).rjust(12, ' '),
 ))
 
-for pct in [10, 25, 50, 70, 80, 90, 95]:
+for pct in [20, 50, 70, 80, 85, 90, 95]:
     render_pct = percentile(renders, pct / 100)
     fp_pct = percentile(fps, pct / 100)
     fcp_pct = percentile(fcps, pct / 100)
