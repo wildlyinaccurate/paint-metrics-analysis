@@ -25,7 +25,7 @@ def metric_values(metric):
 
 
 def remove_outliers(values, outlier_threshold):
-    return [value for value in values if outlier_threshold > value > -(outlier_threshold)]
+    return [value for value in values if value < outlier_threshold]
 
 
 def histogram_trace(data, label, bin_size, xstart=None, xend=None):
@@ -45,53 +45,64 @@ def generate_histogram(outfile, data, labels, bin_size, xstart=None, xend=None, 
     py.plot(fig, filename=outfile, auto_open=False)
     print('Generated %s' % outfile)
 
+#
+# Distribution plots
+#
 
-renders = metric_values('render')
-fps = metric_values('fp')
-fcps = metric_values('fcp')
-fmps = metric_values('fmp')
+renders = sorted(metric_values('render'))
+fps = sorted(metric_values('fp'))
+fcps = sorted(metric_values('fcp'))
+fmps = sorted(metric_values('fmp'))
 
+# There are some large outliers in the data, potentially from bogus test runs.
 renders_filtered = remove_outliers(renders, percentile(renders, 0.95))
 fps_filtered = remove_outliers(fps, percentile(fps, 0.95))
 fcps_filtered = remove_outliers(fcps, percentile(fcps, 0.95))
 fmps_filtered = remove_outliers(fmps, percentile(fmps, 0.95))
 
 # Seeing a distribution of all of the metric values can show how strongly correlated
-# the metrics are. We exclude extreme outliers (>95th percentile) from the metric
-# values, in an attempt to filter out potentially-bogus test results.
+# the metrics are.
 generate_histogram(filename.replace('.json', '-distribution.html'), [renders_filtered, fps_filtered, fcps_filtered], [
                    'Start Render', 'First Paint', 'First Contentful Paint'], bin_size=50)
 
 # Calculating the delta between the paint metrics and start render gives us a better
 # insight into how accurate browsers are at determining when pixels are rendered to
-# the screen. Note that deltas of >2000ms are removed to reduce noise.
-fp_deltas = remove_outliers(
-    [fp - render for fp, render in zip(fps, renders)], 2000)
-fcp_deltas = remove_outliers(
-    [fcp - render for fcp, render in zip(fcps, renders)], 2000)
+# the screen.
+fp_deltas = [fp - render for fp, render in zip(fps, renders)]
+fcp_deltas = [fcp - render for fcp, render in zip(fcps, renders)]
 fmp_deltas = [fmp - render for fmp, render in zip(fmps, renders)]
 
 generate_histogram(filename.replace('.json', '-deltas.html'), [fp_deltas, fcp_deltas], [
                    'First Paint Delta', 'First Contentful Paint Delta'], bin_size=20, xstart=-1000, xend=1000)
 
 # Just for fun, we can see how different FCP is to FP
-fp_fcp_deltas = remove_outliers([fcp - fp for fp, fcp in zip(fps, fmps)], 2000)
+fp_fcp_deltas = [fcp - fp for fp, fcp in zip(fps, fmps)]
 
 generate_histogram(filename.replace('.json', '-fp-fcp-deltas.html'), [fp_fcp_deltas], [
                    'FCP / FP delta'], bin_size=50, xstart=-2000, xend=2000)
 
 # It's also useful to calculate the deltas as a percentage of the start render time,
-# since there is significant variation in the metric values. Deltas of >100% are removed
-# to reduce noise.
-fp_deltas_rel = remove_outliers(
-    [(fp - render) / render for fp, render in zip(fps, renders)], 1)
-fcp_deltas_rel = remove_outliers(
-    [(fcp - render) / render for fcp, render in zip(fcps, renders)], 1)
-fmp_deltas_rel = remove_outliers(
-    [(fmp - render) / render for fmp, render in zip(fmps, renders)], 1)
+# since there is significant variation in the metric values.
+fp_deltas_rel = [(fp - render) / render for fp, render in zip(fps, renders)]
+fcp_deltas_rel = [(fcp - render) / render for fcp,
+                  render in zip(fcps, renders)]
+fmp_deltas_rel = [(fmp - render) / render for fmp,
+                  render in zip(fmps, renders)]
 
 generate_histogram(filename.replace('.json', '-deltas-relative.html'), [fp_deltas_rel, fcp_deltas_rel], [
     'First Paint Delta', 'First Contentful Paint Delta'], bin_size=0.01, xstart=-1, xend=1, tick_interval=0.1)
+
+
+#
+# Aggregate metrics
+#
+
+def pad(i, width=4):
+    return str(round(i)).rjust(width, ' ')
+
+def absolute_values(xs):
+    return sorted(list(map(abs, xs)))
+
 
 # Seeing an average value for each of the metrics gives a rough but useful view
 # of how different the metrics are.
@@ -108,13 +119,9 @@ hmean_fmp = harmonic_mean(fmps)
 
 # Taking the deltas as absolute values allows us to make some assertions about
 # how frequently the paint metrics are within X milliseconds of start render.
-fp_deltas_abs = sorted(list(map(abs, fp_deltas)))
-fcp_deltas_abs = sorted(list(map(abs, fcp_deltas)))
-fmp_deltas_abs = sorted(list(map(abs, fmp_deltas)))
-
-
-def pad(i, width=4):
-    return str(round(i)).rjust(width, ' ')
+fp_deltas_abs = absolute_values(fp_deltas)
+fcp_deltas_abs = absolute_values(fcp_deltas)
+fmp_deltas_abs = absolute_values(fmp_deltas)
 
 
 print('')
@@ -134,9 +141,9 @@ for pct in [10, 25, 50, 70, 80, 90, 95]:
         pad(percentile(fmp_deltas_abs, pct / 100)),
     ))
 
-fp_deltas_rel_abs = sorted(list(map(abs, fp_deltas_rel)))
-fcp_deltas_rel_abs = sorted(list(map(abs, fcp_deltas_rel)))
-fmp_deltas_rel_abs = sorted(list(map(abs, fmp_deltas_rel)))
+fp_deltas_rel_abs = absolute_values(fp_deltas_rel)
+fcp_deltas_rel_abs = absolute_values(fcp_deltas_rel)
+fmp_deltas_rel_abs = absolute_values(fmp_deltas_rel)
 
 print('')
 print('|                            Deltas (Relative)                              |')
@@ -172,16 +179,11 @@ print('| Harmonic Mean   |         %d | %s |           %s |           %s |' % (
     ('%d (%d)' % (hmean_fmp, hmean_fmp - hmean_render)).rjust(12, ' '),
 ))
 
-sorted_renders = sorted(renders)
-sorted_fps = sorted(fps)
-sorted_fcps = sorted(fcps)
-sorted_fmps = sorted(fmps)
-
 for pct in [10, 25, 50, 70, 80, 90, 95]:
-    render_pct = percentile(sorted_renders, pct / 100)
-    fp_pct = percentile(sorted_fps, pct / 100)
-    fcp_pct = percentile(sorted_fcps, pct / 100)
-    fmp_pct = percentile(sorted_fmps, pct / 100)
+    render_pct = percentile(renders, pct / 100)
+    fp_pct = percentile(fps, pct / 100)
+    fcp_pct = percentile(fcps, pct / 100)
+    fmp_pct = percentile(fmps, pct / 100)
 
     print('| %sth percentile |         %d | %s |           %s |           %s |' % (
         str(pct),
