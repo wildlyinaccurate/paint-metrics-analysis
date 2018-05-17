@@ -39,7 +39,8 @@ def histogram_trace(data, label, bin_size, xstart=None, xend=None):
 def generate_histogram(outfile, data, labels, bin_size, xstart=None, xend=None, tick_interval=200):
     data = [histogram_trace(series, label, bin_size, xstart, xend)
             for series, label in zip(data, labels)]
-    layout = go.Layout(barmode='overlay', font=dict(size=28), legend=dict(x=0.77), xaxis=dict(dtick=tick_interval))
+    layout = go.Layout(barmode='overlay', font=dict(
+        size=28), legend=dict(x=0.77), xaxis=dict(dtick=tick_interval))
     fig = go.Figure(data=data, layout=layout)
     py.plot(fig, filename=outfile, auto_open=False)
     print('Generated %s' % outfile)
@@ -72,6 +73,12 @@ fmp_deltas = [fmp - render for fmp, render in zip(fmps, renders)]
 
 generate_histogram(filename.replace('.json', '-deltas.html'), [fp_deltas, fcp_deltas], [
                    'First Paint Delta', 'First Contentful Paint Delta'], bin_size=20, xstart=-1000, xend=1000)
+
+# Just for fun, we can see how different FCP is to FP
+fp_fcp_deltas = remove_outliers([fcp - fp for fp, fcp in zip(fps, fmps)], 2000)
+
+generate_histogram(filename.replace('.json', '-fp-fcp-deltas.html'), [fp_fcp_deltas], [
+                   'FCP / FP delta'], bin_size=50, xstart=-2000, xend=2000)
 
 # It's also useful to calculate the deltas as a percentage of the start render time,
 # since there is significant variation in the metric values. Deltas of >100% are removed
